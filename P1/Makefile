@@ -14,11 +14,11 @@ hipercubo: $(CC) $(DIRSRC)hipercubo.c -o $(DIREXE)hipercubo
 toroide: $(DIRSRC)toroide.c
 		$(CC) -o $(DIREXE)$@ $^ $(LDLIBS)
 
-testhipercubo: 
-			mpirun -n 3 ./$(DIREXE)hipercubo
+run_hipercubo: 
+			mpirun -oversubscribe -n 9 ./$(DIREXE)hipercubo
 
-testtoroide: 
-			mpirun -n 3 ./$(DIREXE)toroide
+run_toroide: 
+			mpirun -oversubscribe -n 9 ./$(DIREXE)toroide
 
 clean:
 	rm -rf *~ core $(DIREXE)
