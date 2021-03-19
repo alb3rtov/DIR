@@ -18,7 +18,7 @@ run_hipercubo:
 			mpirun -oversubscribe -n 9 ./$(DIREXE)hipercubo
 
 run_toroide: 
-			mpirun -oversubscribe -n 9 ./$(DIREXE)toroide
+			mpirun -oversubscribe -n 4 ./$(DIREXE)toroide
 
 clean:
 	rm -rf *~ core $(DIREXE)
