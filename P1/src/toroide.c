@@ -17,6 +17,7 @@ void send_toroidal_confirmation(int toroidal, int size, MPI_Request request);
 void assign_neighbours(int *north_process, int *south_process, int *west_process,
 							int *east_process, int l, int rank, int size);
 int mod(int a, int b);
+float search_min_number(int f_process, int s_process, int size, float send_number);
 
 /* Main function */
 int main(int argc, char **argv) {
@@ -54,50 +55,41 @@ int main(int argc, char **argv) {
 	}
 
 	if (toroidal == 1) {
-		float recv_number, min, send_number;
+		float min_number_column, final_min_number;
 		int north_process, south_process, west_process, east_process;
 
 		/* Receive the number of the list */
 		MPI_Recv(&buf, 1, MPI_FLOAT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-		send_number = buf;
 
 		assign_neighbours(&north_process, &south_process, &west_process, &east_process, sqrt(size), rank, size);
-		
-		/*printf("Process: %d, number assign: %.2f - ",rank, buf);
-		
-		printf("North: %d ", north_process);
-		printf("South: %d ", south_process);
-		printf("East: %d ", east_process);
-		printf("West: %d \n", west_process);*/
+		min_number_column = search_min_number(north_process, south_process, size, buf);
+		final_min_number = search_min_number(west_process, east_process, size, min_number_column);
 
-		/* Loop for send and receive numbers of north and south process */
-		for (int i = 1; i <= sqrt(size) - 1; i++){
-			MPI_Send(&send_number, 1, MPI_FLOAT, south_process, i, MPI_COMM_WORLD);
-			MPI_Recv(&recv_number, 1, MPI_FLOAT, north_process, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-			
-			send_number = compare_numbers(send_number, recv_number);
-			recv_number = send_number;
-		}
-
-		/* Loop for East-West path */
-		for (int i = 1; i <= sqrt(size) - 1; i++){
-			MPI_Send(&send_number, 1, MPI_FLOAT, east_process, i, MPI_COMM_WORLD);
-			MPI_Recv(&recv_number, 1, MPI_FLOAT, west_process, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-						
-			send_number = compare_numbers(send_number, recv_number);
-			recv_number = send_number;
-		}
-
-		//sleep(2);
-		printf(" - [%d (%.2f)] Min number of column: %.2f\n", rank, buf, recv_number);
+		printf(" - [%d (%.2f)] Min number of column: %.2f\n", rank, buf, final_min_number);
 	}
 
 	MPI_Finalize();
 	return 0;
 }
 
+/* Search a min number of column/row */
+float search_min_number(int f_process, int s_process, int size, float send_number) {
+	MPI_Status status;
+	float recv_number;
+
+	for (int i = 1; i <= sqrt(size) - 1; i++){
+		MPI_Send(&send_number, 1, MPI_FLOAT, s_process, i, MPI_COMM_WORLD);
+		MPI_Recv(&recv_number, 1, MPI_FLOAT, f_process, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+		send_number = compare_numbers(send_number, recv_number);
+		recv_number = send_number;
+	}
+	
+	return recv_number;
+}
+
 /* Function to compare which is the smaller number */
 float compare_numbers(float number1, float number2) {
+
 	if (number1 < number2) {
 		return number1;
 	} else {
