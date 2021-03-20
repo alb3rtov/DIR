@@ -115,7 +115,7 @@ void assign_neighbours(int *north_process, int *south_process, int *west_process
 
 	*north_process = mod(rank-l, size);
 	*south_process = mod(rank+l, size);
-	*west_process = row_numbers[mod(number_position+2, l)];
+	*west_process = row_numbers[mod(number_position-1, l)];
 	*east_process = row_numbers[mod(number_position+1, l)];
 }
 
