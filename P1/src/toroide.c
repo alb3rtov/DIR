@@ -12,7 +12,7 @@
 
 FILE* open_file(char filename[], char *permissions);
 void read_assign_values(FILE *file, int size);
-int compare_numbers(double buf, double number);
+float compare_numbers(float number1, float number2);
 void send_toroidal_confirmation(int toroidal, int size, MPI_Request request);
 void assign_neighbours(int *north_process, int *south_process, int *west_process,
 							int *east_process, int l, int rank, int size);
@@ -54,43 +54,55 @@ int main(int argc, char **argv) {
 	}
 
 	if (toroidal == 1) {
-		double recv_number;
-		double min;
-		int north_process;
-		int south_process;
-		int west_process;
-		int east_process;
+		float recv_number, min, send_number;
+		int north_process, south_process, west_process, east_process;
 
 		/* Receive the number of the list */
 		MPI_Recv(&buf, 1, MPI_FLOAT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-		
+		send_number = buf;
+
 		assign_neighbours(&north_process, &south_process, &west_process, &east_process, sqrt(size), rank, size);
 		
-		printf("Process: %d: ",rank);
+		/*printf("Process: %d, number assign: %.2f - ",rank, buf);
 		
 		printf("North: %d ", north_process);
 		printf("South: %d ", south_process);
 		printf("East: %d ", east_process);
-		printf("West: %d \n", west_process);
+		printf("West: %d \n", west_process);*/
 
-		/* Loop for send and receive numbers of north and south process *//*
-		for (int i = 1; i < truncated; i++){
-			MPI_Irecv(&recv_number, 0, MPI_FLOAT, north_process, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-			MPI_Bsend(&buf, 1, MPI_FLOAT, south_process, 0, MPI_COMM_WORLD);
-			min = compareNumbers(buf, recv_number);
-		}*/
+		/* Loop for send and receive numbers of north and south process */
+		for (int i = 1; i <= sqrt(size) - 1; i++){
+			MPI_Send(&send_number, 1, MPI_FLOAT, south_process, i, MPI_COMM_WORLD);
+			MPI_Recv(&recv_number, 1, MPI_FLOAT, north_process, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+			
+			send_number = compare_numbers(send_number, recv_number);
+			recv_number = send_number;
+		}
 
-		/* Loop for East-West path *//*
-		for (int i = 1; i < truncated; i++){
-			MPI_Irecv(&recv_number, 0, MPI_FLOAT, east_processor, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-			MPI_Bsend(&buf, 1, MPI_FLOAT, west_processor, 0, MPI_COMM_WORLD);
-			min = compareNumbers(buf, recv_number);
-		}*/
+		/* Loop for East-West path */
+		for (int i = 1; i <= sqrt(size) - 1; i++){
+			MPI_Send(&send_number, 1, MPI_FLOAT, east_process, i, MPI_COMM_WORLD);
+			MPI_Recv(&recv_number, 1, MPI_FLOAT, west_process, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+						
+			send_number = compare_numbers(send_number, recv_number);
+			recv_number = send_number;
+		}
 
+		//sleep(2);
+		printf(" - [%d (%.2f)] Min number of column: %.2f\n", rank, buf, recv_number);
 	}
 
 	MPI_Finalize();
 	return 0;
+}
+
+/* Function to compare which is the smaller number */
+float compare_numbers(float number1, float number2) {
+	if (number1 < number2) {
+		return number1;
+	} else {
+		return number2;
+	}
 }
 
 /* Calculate the module of the divison */
@@ -124,11 +136,6 @@ void send_toroidal_confirmation(int toroidal, int size, MPI_Request request) {
 	for (int i = 1; i < size; i++) {
 		MPI_Isend(&toroidal, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &request);
 	}
-}
-
-/* Function to compare which is the smaller number */
-int compare_numbers(double buf, double number) {
-
 }
 
 /* Open the file and returns the descriptor */
