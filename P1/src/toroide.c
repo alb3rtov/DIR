@@ -23,7 +23,7 @@ float search_min_number(int f_process, int s_process, int size, float send_numbe
 int main(int argc, char **argv) {
 
 	int rank, size, truncated, toroidal = false;
-	float buf;
+	float buf, final_min_number;
 
 	MPI_Status status;
 	MPI_Request request;
@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 		double value = sqrt(size);
 		truncated = (int) value;
 
-		/*Check if un toroidal network can be possible*/
+		/*Check if un toroidal network can be possible */
 		if (truncated == value) {
 			toroidal = true;
 			send_toroidal_confirmation(toroidal, size, request);
@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
 	}
 
 	if (toroidal == 1) {
-		float min_number_column, final_min_number;
+		float min_number_column;
 		int north_process, south_process, west_process, east_process;
 
 		/* Receive the number of the list */
@@ -65,7 +65,11 @@ int main(int argc, char **argv) {
 		min_number_column = search_min_number(north_process, south_process, size, buf);
 		final_min_number = search_min_number(west_process, east_process, size, min_number_column);
 
-		printf(" - [%d (%.2f)] Min number of column: %.2f\n", rank, buf, final_min_number);
+		//printf(" - [%d (%.2f)] Min number: %.2f\n", rank, buf, final_min_number);
+	}
+
+	if (rank == 0) {
+		printf("\n[Process %d] The mininum number is: %.2f\n\n", rank, final_min_number);
 	}
 
 	MPI_Finalize();
@@ -74,16 +78,24 @@ int main(int argc, char **argv) {
 
 /* Search a min number of column/row */
 float search_min_number(int f_process, int s_process, int size, float send_number) {
+	
+	MPI_Request request1;
+	MPI_Request request2;
 	MPI_Status status;
+
 	float recv_number;
+	int received = false;
+	int flag = 0;
 
 	for (int i = 1; i <= sqrt(size) - 1; i++){
-		MPI_Send(&send_number, 1, MPI_FLOAT, s_process, i, MPI_COMM_WORLD);
-		MPI_Recv(&recv_number, 1, MPI_FLOAT, f_process, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+		MPI_Irecv(&recv_number, 1, MPI_FLOAT, f_process, MPI_ANY_TAG, MPI_COMM_WORLD, &request1);
+		MPI_Isend(&send_number, 1, MPI_FLOAT, s_process, i, MPI_COMM_WORLD, &request2);
+		MPI_Wait(&request1, &status);
+
 		send_number = compare_numbers(send_number, recv_number);
 		recv_number = send_number;
 	}
-	
+
 	return recv_number;
 }
 
