@@ -14,7 +14,9 @@ FILE* open_file(char filename[], char *permissions);
 void read_assign_values(FILE *file, int size);
 int compare_numbers(double buf, double number);
 void send_toroidal_confirmation(int toroidal, int size, MPI_Request request);
-void assign_rows_neighbours(int *f_process, int *s_process, int l, int rank);
+void assign_neighbours(int *north_process, int *south_process, int *west_process,
+							int *east_process, int l, int rank, int size);
+int mod(int a, int b);
 
 /* Main function */
 int main(int argc, char **argv) {
@@ -61,15 +63,20 @@ int main(int argc, char **argv) {
 
 		/* Receive the number of the list */
 		MPI_Recv(&buf, 1, MPI_FLOAT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-		/*printf("Process %d receive: %.2f\n", rank, buf);*/
+		
+		assign_neighbours(&north_process, &south_process, &west_process, &east_process, sqrt(size), rank, size);
+		
+		printf("Process: %d: ",rank);
+		
+		printf("North: %d ", north_process);
+		printf("South: %d ", south_process);
+		printf("East: %d ", east_process);
+		printf("West: %d \n", west_process);
 
-		assign_rows_neighbours(&west_process, &east_process, sqrt(size), rank);
-		//assign_columns_neighbours(&north_process, &south_process, sqrt(size), rank);
-		/*assignNeighbour(&west_process, &east_process, size/2, rank);*/
-		/* Loop for North-South path *//*
+		/* Loop for send and receive numbers of north and south process *//*
 		for (int i = 1; i < truncated; i++){
-			MPI_Irecv(&recv_number, 0, MPI_FLOAT, south_processor, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-			MPI_Bsend(&buf, 1, MPI_FLOAT, north_processor, 0, MPI_COMM_WORLD);
+			MPI_Irecv(&recv_number, 0, MPI_FLOAT, north_process, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+			MPI_Bsend(&buf, 1, MPI_FLOAT, south_process, 0, MPI_COMM_WORLD);
 			min = compareNumbers(buf, recv_number);
 		}*/
 
@@ -86,12 +93,18 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
+/* Calculate the module of the divison */
+int mod(int a, int b) {
+    int r = a % b;
+    return r < 0 ? r + b : r;
+}
+
 /* Assign neighours of rows to processes */
-void assign_rows_neighbours(int *west_process, int *east_process, int l, int rank) {
+void assign_neighbours(int *north_process, int *south_process, int *west_process,
+							int *east_process, int l, int rank, int size) {
 	int row, number_position, j = 0;
 	int row_numbers[l];
 	row = rank/l;
-	printf("Process: %d, row %d: ",rank,row);
 
 	for (int i = row*l; i<=((row*l)+l-1); i++) {
 		if (rank == i) {
@@ -99,26 +112,12 @@ void assign_rows_neighbours(int *west_process, int *east_process, int l, int ran
 		}
 		row_numbers[j++] = i;
 	}
-	
-	*west_process = (number_position+2)%l;
-	*east_process = (number_position+1)%l;
 
-	for (int k = 0; k < l; k++) {
-		printf("%d ", row_numbers[k]);
-	}
-
-	printf("Derecha: %d (%d) ",*east_process, row_numbers[*east_process]);
-	printf("Izquierda: %d (%d)\n",*east_process, row_numbers[*east_process]);
+	*north_process = mod(rank-l, size);
+	*south_process = mod(rank+l, size);
+	*west_process = row_numbers[mod(number_position+2, l)];
+	*east_process = row_numbers[mod(number_position+1, l)];
 }
-/*
-void assign_columns_neighbours(int *north_process, int *south_process, int l, int rank) {
-	int column, number_position, j = 0;
-	int column_numbers[l];
-	column = rank/l;
-	printf("COLUMNS:\n");
-
-	for (int i = )
-}*/
 
 /* Loop to notify process if the network can be toroidal */
 void send_toroidal_confirmation(int toroidal, int size, MPI_Request request) {
