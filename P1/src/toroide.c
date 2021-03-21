@@ -4,16 +4,13 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+
+#include <definitions.h>
+
 #include "/usr/lib/x86_64-linux-gnu/openmpi/include/mpi.h"
 
-#define BUFFER 2014
-#define true 1
-#define false 0
-
-FILE* open_file(char filename[], char *permissions);
 void read_assign_values(FILE *file, int size);
 float compare_numbers(float number1, float number2);
-void send_toroidal_confirmation(int toroidal, int size, MPI_Request request);
 void assign_neighbours(int *north_process, int *south_process, int *west_process,
 							int *east_process, int l, int rank, int size);
 int mod(int a, int b);
@@ -39,14 +36,13 @@ int main(int argc, char **argv) {
 		/*Check if un toroidal network can be possible */
 		if (truncated == value) {
 			toroidal = true;
-			send_toroidal_confirmation(toroidal, size, request);
+			send_network_topology_confirmation(toroidal, size, request);
 
 			FILE* file = open_file("datos.dat","r");
 			read_assign_values(file, size);
 
 		} else {
-			toroidal = false;
-			send_toroidal_confirmation(toroidal, size, request);
+			send_network_topology_confirmation(toroidal, size, request);
 			fprintf(stderr, "Error, can't create toroidal network: %d processes\n", size);
 		}
 
@@ -54,7 +50,7 @@ int main(int argc, char **argv) {
 		MPI_Recv(&toroidal, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 	}
 
-	if (toroidal == 1) {
+	if (toroidal == true) {
 		float min_number_column;
 		int north_process, south_process, west_process, east_process;
 
@@ -133,26 +129,6 @@ void assign_neighbours(int *north_process, int *south_process, int *west_process
 	*south_process = mod(rank+l, size);
 	*west_process = row_numbers[mod(number_position-1, l)];
 	*east_process = row_numbers[mod(number_position+1, l)];
-}
-
-/* Loop to notify process if the network can be toroidal */
-void send_toroidal_confirmation(int toroidal, int size, MPI_Request request) {
-	for (int i = 1; i < size; i++) {
-		MPI_Isend(&toroidal, 1, MPI_INT, i, 0, MPI_COMM_WORLD, &request);
-	}
-}
-
-/* Open the file and returns the descriptor */
-FILE* open_file(char filename[], char *permissions) {
-	FILE *file;
-	file = fopen(filename, permissions);
-
-	if (file == NULL) {
-	fprintf(stderr, "Error opening file '%s': %s\n", filename, strerror(errno));
-	exit(EXIT_FAILURE);
-	}
-
-	return file;
 }
 
 /* Read and assign numbers to child processes*/
