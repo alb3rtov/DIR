@@ -6,6 +6,7 @@ https://github.com/alb3rtov/DIR/
 - src: Contains the source C code
 - datos.dat: Contais the list of the numbers
 - exec: Executables files
+- include: Constains headers files with definitions
 
 # Compile
 To compile the code use `make`
