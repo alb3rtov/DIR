@@ -7,8 +7,7 @@
 #include <definitions.h>
 #include "/usr/lib/x86_64-linux-gnu/openmpi/include/mpi.h"
 
-void assign_neighbours(int rank, int dimension, int *binary_number);
-void convert_decimal_to_binary(int number, int dimension, int *binary_number);
+void calculate_neighbours(int *neighbours, int size, int rank, int dimension);
 
 /* Main function */
 int main(int argc, char **argv) {
@@ -43,49 +42,34 @@ int main(int argc, char **argv) {
 
     if (hypercube == true) {
         dimension = log(size)/log(2);
-        int binary_number[dimension];
+        int neighbours[dimension];
         
-        assign_neighbours(rank, dimension, binary_number);
-       
-        printf("Number %d --> ", rank);
+        calculate_neighbours(neighbours, size, rank, dimension);
+
+        printf("Process %d neighbours: ",rank);
         for (int i = 0; i < dimension; i++) {
-            printf("%d",binary_number[i]);
+            printf("%d ",neighbours[i]);
         }
         printf("\n");
         //MPI_Recv(&buf, 1, MPI_FLOAT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
+        
     }
 
     MPI_Finalize();
 }
 
-/* Convert a given decimal number to binary number */
-void convert_decimal_to_binary(int number, int dimension, int *binary_number) {
-    int i, j;
-    int aux = dimension;
-    int binary[dimension];
+void calculate_neighbours(int *neighbours, int size, int rank, int dimension) {
+    int cnt = 0;
     
-    for (i = 0; number > 0; i++) {
-        binary[i] = number%2;
-        number = number/2;
-        aux--;
+    for (int i = 0; i < size; i++) {
+        if (cnt == dimension) {
+            break;
+        } else {
+            int res = rank^i;
+            if (res == 1 || res == 2 || res == 4) {
+                neighbours[cnt++] = i;
+            }
+        }
     }
-    
-    /* Fix numbers which length is less than the dimension of the network */
-    for (j = 0; j < aux; j++) {
-        binary_number[j] = 0;
-    }
-    
-    for (int k = i - 1; k >= 0; k--) {
-        binary_number[j++] = binary[k];
-    }
-}
-
-/* Assign neighours to processes */
-void assign_neighbours(int rank, int dimension, int *binary_number) {
-    convert_decimal_to_binary(rank, dimension, binary_number);
-    
-
-
-
 }

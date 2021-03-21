@@ -18,7 +18,7 @@ toroide: $(DIRSRC)toroide.c
 		$(CC) -o $(DIREXE)$@ $^ $(LDLIBS) $(CFLAGS)
 
 run_hipercubo: 
-			mpirun -oversubscribe -n 16 ./$(DIREXE)hipercubo
+			mpirun -oversubscribe -n 8 ./$(DIREXE)hipercubo
 
 run_toroide: 
 			mpirun -oversubscribe -n 9 ./$(DIREXE)toroide
