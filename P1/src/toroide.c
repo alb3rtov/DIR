@@ -6,10 +6,8 @@
 #include <unistd.h>
 
 #include <definitions.h>
-
 #include "/usr/lib/x86_64-linux-gnu/openmpi/include/mpi.h"
 
-void read_assign_values(FILE *file, int size);
 float compare_numbers(float number1, float number2);
 void assign_neighbours(int *north_process, int *south_process, int *west_process,
 							int *east_process, int l, int rank, int size);
@@ -60,8 +58,6 @@ int main(int argc, char **argv) {
 		assign_neighbours(&north_process, &south_process, &west_process, &east_process, sqrt(size), rank, size);
 		min_number_column = search_min_number(north_process, south_process, size, buf);
 		final_min_number = search_min_number(west_process, east_process, size, min_number_column);
-
-		//printf(" - [%d (%.2f)] Min number: %.2f\n", rank, buf, final_min_number);
 	}
 
 	if (rank == 0) {
@@ -129,21 +125,4 @@ void assign_neighbours(int *north_process, int *south_process, int *west_process
 	*south_process = mod(rank+l, size);
 	*west_process = row_numbers[mod(number_position-1, l)];
 	*east_process = row_numbers[mod(number_position+1, l)];
-}
-
-/* Read and assign numbers to child processes*/
-void read_assign_values(FILE *file, int size) {
-	char buffer[BUFFER];
-	float buf;
-
-	fgets(buffer, BUFFER, file);
-	char * token = strtok(buffer, ",");
-	
-	while ((token != NULL) && (size > 0)) {
-		size--;
-		buf = atof(token);
-		MPI_Bsend(&buf, 1, MPI_FLOAT, size, 0, MPI_COMM_WORLD);
-		token = strtok(NULL, ",");
-	}
-	fclose(file);
 }
