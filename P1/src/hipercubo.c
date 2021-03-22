@@ -7,7 +7,8 @@
 #include <definitions.h>
 #include "/usr/lib/x86_64-linux-gnu/openmpi/include/mpi.h"
 
-void calculate_neighbours(int *neighbours, int size, int rank, int dimension);
+void assign_neighbours(int *neighbours, int size, int rank, int dimension);
+void search_max_number(int *neighbours, int size);
 
 /* Main function */
 int main(int argc, char **argv) {
@@ -44,22 +45,30 @@ int main(int argc, char **argv) {
         dimension = log(size)/log(2);
         int neighbours[dimension];
         
-        calculate_neighbours(neighbours, size, rank, dimension);
+        MPI_Recv(&buf, 1, MPI_FLOAT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+        assign_neighbours(neighbours, size, rank, dimension);
 
+        search_max_number(neighbours, size);
+
+        
         printf("Process %d neighbours: ",rank);
         for (int i = 0; i < dimension; i++) {
             printf("%d ",neighbours[i]);
         }
         printf("\n");
-        //MPI_Recv(&buf, 1, MPI_FLOAT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-
         
+
     }
 
     MPI_Finalize();
 }
 
-void calculate_neighbours(int *neighbours, int size, int rank, int dimension) {
+void search_max_number(int *neighbours, int size) {
+    
+}
+
+/* Assign neighbouts using XOR operation */
+void assign_neighbours(int *neighbours, int size, int rank, int dimension) {
     int cnt = 0;
     
     for (int i = 0; i < size; i++) {
@@ -67,9 +76,12 @@ void calculate_neighbours(int *neighbours, int size, int rank, int dimension) {
             break;
         } else {
             int res = rank^i;
-            if (res == 1 || res == 2 || res == 4) {
-                neighbours[cnt++] = i;
+            for (int j = 0; j < dimension; j++) {
+                if (res == (int) pow(2,j)) {
+                    neighbours[cnt++] = i;
+                }
             }
+
         }
     }
 }
