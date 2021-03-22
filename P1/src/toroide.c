@@ -58,6 +58,8 @@ int main(int argc, char **argv) {
 		assign_neighbours(&north_process, &south_process, &west_process, &east_process, sqrt(size), rank, size);
 		min_number_column = search_min_number(north_process, south_process, size, buf);
 		final_min_number = search_min_number(west_process, east_process, size, min_number_column);
+
+		//printf("Process %d number: %.2f\n",rank, final_min_number);
 	}
 
 	if (rank == 0) {
@@ -76,10 +78,8 @@ float search_min_number(int f_process, int s_process, int size, float send_numbe
 	MPI_Status status;
 
 	float recv_number;
-	int received = false;
-	int flag = 0;
-
-	for (int i = 1; i <= sqrt(size) - 1; i++){
+	
+	for (int i = 0; i <= sqrt(size); i++){
 		MPI_Irecv(&recv_number, 1, MPI_FLOAT, f_process, MPI_ANY_TAG, MPI_COMM_WORLD, &request1);
 		MPI_Isend(&send_number, 1, MPI_FLOAT, s_process, i, MPI_COMM_WORLD, &request2);
 		MPI_Wait(&request1, &status);

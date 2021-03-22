@@ -3,12 +3,13 @@
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include <definitions.h>
 #include "/usr/lib/x86_64-linux-gnu/openmpi/include/mpi.h"
 
 void assign_neighbours(int *neighbours, int size, int rank, int dimension);
-void search_max_number(int *neighbours, int size);
+float search_max_number(int *neighbours, int size,  int dimension, float send_number);
 
 /* Main function */
 int main(int argc, char **argv) {
@@ -46,25 +47,63 @@ int main(int argc, char **argv) {
         int neighbours[dimension];
         
         MPI_Recv(&buf, 1, MPI_FLOAT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-        assign_neighbours(neighbours, size, rank, dimension);
-
-        search_max_number(neighbours, size);
-
         
+        
+
+        assign_neighbours(neighbours, size, rank, dimension);
+        /*
         printf("Process %d neighbours: ",rank);
         for (int i = 0; i < dimension; i++) {
             printf("%d ",neighbours[i]);
         }
         printf("\n");
+        */;
         
+
+        float max_number = search_max_number(neighbours, size, dimension, buf);
+
+        
+
+        printf("Process %d number: %.2f: max: %.2f\n",rank, buf, max_number);
 
     }
 
     MPI_Finalize();
 }
 
-void search_max_number(int *neighbours, int size) {
+/* Function to compare which is the bigger number */
+float compare_numbers(float number1, float number2) {
+
+	if (number1 > number2) {
+		return number1;
+	} else {
+		return number2;
+	}
+}
+
+/* Search the max number sending the number assigned and asking to neighbours for their numbers */
+float search_max_number(int *neighbours, int size, int dimension, float send_number) {
     
+    MPI_Request request1;
+	MPI_Request request2;
+	MPI_Status status;
+
+	float recv_number;
+    
+    for (int i = 0; i < dimension; i++) {
+        //Recibir
+        MPI_Irecv(&recv_number, 1, MPI_FLOAT, neighbours[i], MPI_ANY_TAG, MPI_COMM_WORLD, &request1);
+        //Enviar
+        MPI_Isend(&send_number, 1, MPI_FLOAT, neighbours[i], i, MPI_COMM_WORLD, &request2);
+        //Esperar
+        MPI_Wait(&request1, &status);
+        
+        //comparar
+		send_number = compare_numbers(send_number, recv_number);
+		recv_number = send_number;
+    }
+
+    return recv_number;
 }
 
 /* Assign neighbouts using XOR operation */
