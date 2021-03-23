@@ -8,11 +8,13 @@
 #include <definitions.h>
 #include "/usr/lib/x86_64-linux-gnu/openmpi/include/mpi.h"
 
+#define NUM_NEIGHBOURS 4
+
 float compare_numbers(float number1, float number2);
 void assign_neighbours(int *north_process, int *south_process, int *west_process,
 							int *east_process, int l, int rank, int size);
 int mod(int a, int b);
-float search_min_number(int f_process, int s_process, int size, float send_number);
+float search_min_number(int neighbours[], int size, float send_number);
 
 /* Main function */
 int main(int argc, char **argv) {
@@ -49,16 +51,27 @@ int main(int argc, char **argv) {
 	}
 
 	if (toroidal == true) {
-		float min_number_column;
+		
 		int north_process, south_process, west_process, east_process;
 
 		/* Receive the number of the list */
 		MPI_Recv(&buf, 1, MPI_FLOAT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
 		assign_neighbours(&north_process, &south_process, &west_process, &east_process, sqrt(size), rank, size);
-		min_number_column = search_min_number(north_process, south_process, size, buf);
-		final_min_number = search_min_number(west_process, east_process, size, min_number_column);
+		
+		//printf("Proccess %d: %d %d %d %d\n", rank, north_process, south_process, east_process, west_process);
+		
+		int neighbours[NUM_NEIGHBOURS] = {north_process, south_process, west_process, east_process};
 
+		/*
+		printf("Process %d: ", rank);
+		for (int i = 0; i < NUM_NEIGHBOURS; i++) {
+			printf("%d ",neighbours[i]);
+		}
+		printf("\n");
+		*/
+		final_min_number = search_min_number(neighbours, size, buf);
+		
 		//printf("Process %d number: %.2f\n",rank, final_min_number);
 	}
 
@@ -71,21 +84,24 @@ int main(int argc, char **argv) {
 }
 
 /* Search a min number of column/row */
-float search_min_number(int f_process, int s_process, int size, float send_number) {
+float search_min_number(int neighbours[], int size, float send_number) {
 	
-	MPI_Request request1;
-	MPI_Request request2;
+	MPI_Request request1, request2;
 	MPI_Status status;
-
+	int cnt = 0;
 	float recv_number;
 	
-	for (int i = 0; i <= sqrt(size); i++){
-		MPI_Irecv(&recv_number, 1, MPI_FLOAT, f_process, MPI_ANY_TAG, MPI_COMM_WORLD, &request1);
-		MPI_Isend(&send_number, 1, MPI_FLOAT, s_process, i, MPI_COMM_WORLD, &request2);
-		MPI_Wait(&request1, &status);
-
-		send_number = compare_numbers(send_number, recv_number);
-		recv_number = send_number;
+	for (int j = 0; j < 2; j++) {
+		for (int i = 0; i <= sqrt(size); i++) {
+			MPI_Irecv(&recv_number, 1, MPI_FLOAT, neighbours[cnt+1], MPI_ANY_TAG, MPI_COMM_WORLD, &request1);
+			MPI_Isend(&send_number, 1, MPI_FLOAT, neighbours[cnt], i, MPI_COMM_WORLD, &request2);
+			MPI_Wait(&request1, &status);
+			
+			send_number = compare_numbers(send_number, recv_number);
+			recv_number = send_number;
+		
+		}
+		cnt+=2;
 	}
 
 	return recv_number;

@@ -44,6 +44,7 @@ int main(int argc, char **argv) {
 
     if (hypercube == true) {
         dimension = log(size)/log(2);
+        /* [Neighbour dimension 1, neighbour dimension 2, ... , neighbour dimension D...] */
         int neighbours[dimension];
         
         MPI_Recv(&buf, 1, MPI_FLOAT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
@@ -113,6 +114,7 @@ void assign_neighbours(int *neighbours, int size, int rank, int dimension) {
                 /* Check if only change 1 bit in res variable */
                 if (res == (int) pow(2,j)) {
                     for (int k = 0; k < dimension; k++) {
+                        /* Check the dimension to assign it in the right position into the array */
                         if ((i == rank - (int) pow(2,k)) || (i == rank + (int) pow(2,k)))  {
                             neighbours[k] = i;
                             cnt++;
