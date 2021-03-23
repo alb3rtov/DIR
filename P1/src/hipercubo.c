@@ -9,12 +9,12 @@
 #include "/usr/lib/x86_64-linux-gnu/openmpi/include/mpi.h"
 
 void assign_neighbours(int *neighbours, int size, int rank, int dimension);
-float search_max_number(int *neighbours, int size,  int dimension, float send_number);
+float search_max_number(int *neighbours, int size,  int dimension, float send_number, int rank);
 
 /* Main function */
 int main(int argc, char **argv) {
     int rank, size, dimension, hypercube = false;
-    float buf;
+    float buf,  max_number;
     
 	MPI_Request request;
     MPI_Status status;
@@ -48,8 +48,6 @@ int main(int argc, char **argv) {
         
         MPI_Recv(&buf, 1, MPI_FLOAT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
         
-        
-
         assign_neighbours(neighbours, size, rank, dimension);
         /*
         printf("Process %d neighbours: ",rank);
@@ -57,15 +55,15 @@ int main(int argc, char **argv) {
             printf("%d ",neighbours[i]);
         }
         printf("\n");
-        */;
+        */
         
+        max_number = search_max_number(neighbours, size, dimension, buf, rank);
 
-        float max_number = search_max_number(neighbours, size, dimension, buf);
+        //printf("Process %d number: %.2f: max: %.2f\n",rank, buf, max_number);
+    }
 
-        
-
-        printf("Process %d number: %.2f: max: %.2f\n",rank, buf, max_number);
-
+    if (rank == 0) {
+        printf("\n[Process %d] The maximum number is: %.2f\n\n", rank, max_number);
     }
 
     MPI_Finalize();
@@ -82,7 +80,7 @@ float compare_numbers(float number1, float number2) {
 }
 
 /* Search the max number sending the number assigned and asking to neighbours for their numbers */
-float search_max_number(int *neighbours, int size, int dimension, float send_number) {
+float search_max_number(int *neighbours, int size, int dimension, float send_number, int rank) {
     
     MPI_Request request1;
 	MPI_Request request2;
@@ -91,14 +89,10 @@ float search_max_number(int *neighbours, int size, int dimension, float send_num
 	float recv_number;
     
     for (int i = 0; i < dimension; i++) {
-        //Recibir
         MPI_Irecv(&recv_number, 1, MPI_FLOAT, neighbours[i], MPI_ANY_TAG, MPI_COMM_WORLD, &request1);
-        //Enviar
         MPI_Isend(&send_number, 1, MPI_FLOAT, neighbours[i], i, MPI_COMM_WORLD, &request2);
-        //Esperar
         MPI_Wait(&request1, &status);
-        
-        //comparar
+
 		send_number = compare_numbers(send_number, recv_number);
 		recv_number = send_number;
     }
@@ -116,11 +110,19 @@ void assign_neighbours(int *neighbours, int size, int rank, int dimension) {
         } else {
             int res = rank^i;
             for (int j = 0; j < dimension; j++) {
+                /* Check if only change 1 bit in res variable */
                 if (res == (int) pow(2,j)) {
-                    neighbours[cnt++] = i;
+                    for (int k = 0; k < dimension; k++) {
+                        if ((i == rank - (int) pow(2,k)) || (i == rank + (int) pow(2,k)))  {
+                            neighbours[k] = i;
+                            cnt++;
+                            break; 
+                        }
+
+                    }
+
                 }
             }
-
         }
     }
 }
