@@ -139,7 +139,7 @@ int main (int argc, char *argv[]) {
             int cnt = 0;
 
             for (int x = 0; x < 400; x++) {
-                  for (int y = 0; y < nrchar/(3*400); y++) {
+                  for (int y = (nrchar*rank-1)/(3*400); y < ((nrchar*rank-1)/(3*400))+(nrchar/(3*400)) ; y++) {
                         buffer[0] = x;
                         buffer[1] = y; 
                         buffer[2] = buf[cnt];
