@@ -93,7 +93,7 @@ int main (int argc, char *argv[]) {
                   dibujaPunto(buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
             }
             
-            //sleep(5);
+            sleep(5);
 	      /*En algun momento dibujamos puntos en la ventana algo como
 	      dibujaPunto(x,y,r,g,b);  */
 
