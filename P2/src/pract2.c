@@ -118,11 +118,8 @@ int main (int argc, char *argv[]) {
                         buffer[2] = buf[cnt];
                         buffer[3] = buf[cnt+1];
                         buffer[4] = buf[cnt+2];
-                        MPI_Send(&buffer, 5, MPI_INT, 0, x*y, commPadre);
-                        //if (x <= 3 && y <= 3) {
-                        //      printf("es eso: %d %d %d\n", buffer[2], buffer[3], buffer[4]);
-                        //}
-                        cnt++;
+                        MPI_Send(&buffer, 5, MPI_INT, 0, x*y, commPadre);                    
+                        cnt+=3;
                   }
             }
       }
