@@ -81,7 +81,7 @@ int main (int argc, char *argv[]) {
       else {
 
             int bufsize, nrchar, cnt = 0;
-            char *buf;          /* Buffer for reading */
+            unsigned char *buf;          /* Buffer for reading */
             MPI_Offset filesize;
             MPI_File myfile;    /* Shared file */
             MPI_Status status;  /* Status returned from read */
@@ -107,10 +107,10 @@ int main (int argc, char *argv[]) {
             /* Find out how many elemyidnts were read */
             MPI_Get_count(&status, MPI_UNSIGNED_CHAR, &nrchar);
             /* Set terminating null char in the string */
-            buf[nrchar] = (char)0;
+            buf[nrchar] = ( unsigned char)0;
             /* Close the file */
             MPI_File_close(&myfile);
-
+            //printf("%d %d %d\n", buf[143], buf[144], buf[145]);
             for (int y = (nrchar*rank-1)/(3*400); y < ((nrchar*rank-1)/(3*400))+(nrchar/(3*400)) ; y++) {
                   for (int x = 0; x < 400; x++) {
                         buffer[0] = x;
@@ -119,6 +119,9 @@ int main (int argc, char *argv[]) {
                         buffer[3] = buf[cnt+1];
                         buffer[4] = buf[cnt+2];
                         MPI_Send(&buffer, 5, MPI_INT, 0, x*y, commPadre);
+                        //if (x <= 3 && y <= 3) {
+                        //      printf("es eso: %d %d %d\n", buffer[2], buffer[3], buffer[4]);
+                        //}
                         cnt++;
                   }
             }
