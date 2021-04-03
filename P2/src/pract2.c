@@ -5,10 +5,10 @@
 #include <assert.h>
 #include <unistd.h>
 
-#include <filters_values.h>
+#include "filters_values.h"
 
 #define NIL (0)
-#define NUM_WORKERS_PROCESS 1
+#define NUM_WORKERS_PROCESS 8
 #define FILENAME "data/foto.dat"
 
 /* Global variables */
@@ -56,7 +56,7 @@ void dibujaPunto(int x,int y, int r, int g, int b) {
 int get_num_filter() {
       int num_filter = 0;
       
-      printf("Filtros\n");
+      printf("\nFiltros:\n");
       printf("- (1) Sin filtro\n");
       printf("- (2) Blanco y negro\n");
       printf("- (3) Sepia\n");
@@ -143,7 +143,7 @@ int main (int argc, char *argv[]) {
             }
             
             initX();
-
+            
             for (int i = 0; i < 160000; i++) {
                   MPI_Recv(&buffer, 5, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, intercomm, &status);
                   dibujaPunto(buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
@@ -160,7 +160,7 @@ int main (int argc, char *argv[]) {
             MPI_File myfile;    /* Shared file */
             MPI_Status status;  /* Status returned from read */
             MPI_Request request;
-
+            
             MPI_Recv(&num_filter, 1, MPI_INT, 0, MPI_ANY_TAG, commPadre, &status);
             MPI_Comm_get_parent( &commPadre );
 
