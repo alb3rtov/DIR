@@ -5,8 +5,10 @@
 #include <assert.h>
 #include <unistd.h>
 
+#include <filters_values.h>
+
 #define NIL (0)
-#define NUM_WORKERS_PROCESS 8
+#define NUM_WORKERS_PROCESS 1
 #define FILENAME "data/foto.dat"
 
 /* Global variables */
@@ -53,12 +55,14 @@ void dibujaPunto(int x,int y, int r, int g, int b) {
 /* Select filter */
 int get_num_filter() {
       int num_filter = 0;
+      
       printf("Filtros\n");
       printf("- (1) Sin filtro\n");
       printf("- (2) Blanco y negro\n");
       printf("- (3) Sepia\n");
       printf("Introduzca un número de filtro: \n");
       scanf("%d", &num_filter);
+
       return num_filter;
 }
 
@@ -69,24 +73,27 @@ void set_no_filter(int *buffer, unsigned char *buf, int cnt) {
       buffer[4] = buf[cnt+2];
 }
 
+/* Set grayscale filter for each pixel */
 void set_bw_filter(int *buffer, unsigned char *buf, int cnt) {
-
+      buffer[2] = buf[cnt]*BLACK_WHITE_VALUE + buf[cnt+1]*BLACK_WHITE_VALUE + buf[cnt+2]*BLACK_WHITE_VALUE;
+      buffer[3] = buf[cnt]*BLACK_WHITE_VALUE + buf[cnt+1]*BLACK_WHITE_VALUE + buf[cnt+2]*BLACK_WHITE_VALUE;
+      buffer[4] = buf[cnt]*BLACK_WHITE_VALUE + buf[cnt+1]*BLACK_WHITE_VALUE + buf[cnt+2]*BLACK_WHITE_VALUE;
 }
 
-/* Set filter sepia for every pixel */
+/* Set sepia filter for each pixel */
 void set_sepia_filter(int *buffer, unsigned char *buf, int cnt) {
 
-      buffer[2] = buf[cnt]*0.393 + buf[cnt+1]*0.769 + buf[cnt+2]*0.189; /* Red */
+      buffer[2] = buf[cnt]*RED_SEPIA_R + buf[cnt+1]*RED_SEPIA_G + buf[cnt+2]*RED_SEPIE_B; /* Red */
       if (buffer[2] > 255) {
             buffer[2] = 255;
       }
 
-      buffer[3] = buf[cnt]*0.349 + buf[cnt+1]*0.686 + buf[cnt+2]*0.168; /* Green */
+      buffer[3] = buf[cnt]*GREEN_SEPIA_R + buf[cnt+1]*GREEN_SEPIA_G + buf[cnt+2]*GREEN_SEPIA_B; /* Green */
       if (buffer[3] > 255) {
             buffer[3] = 255;
       }
 
-      buffer[4] = buf[cnt]*0.272 + buf[cnt+1]*0.534 + buf[cnt+2]*0.131; /* Blue */
+      buffer[4] = buf[cnt]*BLUE_SEPIA_R + buf[cnt+1]*BLUE_SEPIA_G + buf[cnt+2]*BLUE_SEPIA_B; /* Blue */
       if (buffer[4] > 255) {
             buffer[4] = 255;
       }
@@ -129,8 +136,8 @@ int main (int argc, char *argv[]) {
             
             MPI_Comm_spawn("exec/pract2", MPI_ARGV_NULL, NUM_WORKERS_PROCESS, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &intercomm, errcodes);
 	      
+            /* Set and send the number of filter */
             num_filter = get_num_filter();
-
             for (int i = 0; i < NUM_WORKERS_PROCESS; i++) {
                   MPI_Send(&num_filter, 1, MPI_INT, i, i, intercomm);  
             }
@@ -142,13 +149,13 @@ int main (int argc, char *argv[]) {
                   dibujaPunto(buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
             }
             
-            printf("Press any key to continue\n");
+            printf("Presiona una tecla para continuar...\n");
             getchar();getchar();
       }
 
       else {
             int bufsize, nrchar, cnt = 0;
-            unsigned char *buf;          /* Buffer for reading */
+            unsigned char *buf;  /* Buffer for reading */
             MPI_Offset filesize;
             MPI_File myfile;    /* Shared file */
             MPI_Status status;  /* Status returned from read */
