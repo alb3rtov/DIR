@@ -8,7 +8,7 @@
 #include "filters_values.h"
 
 #define NIL (0)
-#define NUM_WORKERS_PROCESS 8
+#define NUM_WORKERS_PROCESS 3
 #define FILENAME "data/foto.dat"
 
 /* Global variables */
@@ -60,6 +60,7 @@ int get_num_filter() {
       printf("- (1) Sin filtro\n");
       printf("- (2) Blanco y negro\n");
       printf("- (3) Sepia\n");
+      printf("- (4) Color invertido\n");
       printf("Introduzca un número de filtro: \n");
       scanf("%d", &num_filter);
 
@@ -99,6 +100,13 @@ void set_sepia_filter(int *buffer, unsigned char *buf, int cnt) {
       }
 }
 
+/* Set inverted colors filter */
+void set_inverted_filter(int *buffer, unsigned char *buf, int cnt) {
+      buffer[2] = 255-buf[cnt];
+      buffer[3] = 255-buf[cnt+1];
+      buffer[4] = 255-buf[cnt+2];
+}
+
 /* Switch that calls the filter selected */
 void select_filter(int *buffer, unsigned char *buf, int cnt, int num_filter) {
       switch (num_filter) {
@@ -111,10 +119,31 @@ void select_filter(int *buffer, unsigned char *buf, int cnt, int num_filter) {
       case 3:
             set_sepia_filter(buffer, buf, cnt);
             break;
+      case 4:
+            set_inverted_filter(buffer, buf, cnt);
+            break;
       default:
             set_no_filter(buffer, buf, cnt); /* No filter by default */
             break;
       }
+}
+
+int check_pixels_division(int bufsize) {
+      int truncanted;
+      double result;
+
+      result = (double) bufsize/(3*400);
+      truncanted = (int) result;
+      //printf("%d %f\n",truncanted, result);
+      while (result != truncanted) {
+            
+            bufsize--;
+            result = (double) bufsize/(3*400);
+            truncanted = (int) result;
+            //printf("%d\n",bufsize);
+      }
+
+      return bufsize;
 }
 
 /* Main function */
@@ -167,19 +196,34 @@ int main (int argc, char *argv[]) {
             MPI_File_open (MPI_COMM_WORLD, FILENAME, MPI_MODE_RDONLY, MPI_INFO_NULL, &myfile); /* Open the file */
             MPI_File_get_size(myfile, &filesize);  /* Get the size of the file */
             
-            filesize = filesize/sizeof(char); /* Calculate how many elements that is */
+            filesize = filesize/sizeof(unsigned char); /* Calculate how many elements that is */
             bufsize = filesize/NUM_WORKERS_PROCESS; /* Calculate how many elements each processor gets */
-            buf = (char *) malloc((bufsize+1)*sizeof(char)); /* Allocate the buffer to read to, one extra for terminating null char */
 
-            MPI_File_set_view(myfile, rank*bufsize*sizeof(char), MPI_UNSIGNED_CHAR, MPI_UNSIGNED_CHAR, 
+            bufsize = check_pixels_division(bufsize);
+
+            /*int diff = 0;
+            if (rank == NUM_WORKERS_PROCESS) {
+                  if (bufsize*NUM_WORKERS_PROCESS != filesize) {
+                        diff = filesize - (bufsize*NUM_WORKERS_PROCESS);
+                        bufsize = bufsize + diff;
+                  }
+                  //printf("%d - %d\n",diff, bufsize);
+            }*/
+
+          
+            
+
+            buf = (unsigned char *) malloc((bufsize+1)*sizeof(unsigned char)); /* Allocate the buffer to read to, one extra for terminating null char */
+            //printf("%d (%d)\n",bufsize,filesize);
+            MPI_File_set_view(myfile, rank*bufsize*sizeof(unsigned char), MPI_UNSIGNED_CHAR, MPI_UNSIGNED_CHAR, 
                         "native", MPI_INFO_NULL); /* Set the file view */   
             MPI_File_read(myfile, buf, bufsize, MPI_UNSIGNED_CHAR, &status); /* Read from the file */
             MPI_Get_count(&status, MPI_UNSIGNED_CHAR, &nrchar); /* Find out how many elemyidnts were read */
             
-            buf[nrchar] = ( unsigned char)0; /* Set terminating null char in the string */
+            buf[nrchar] = (unsigned char)0; /* Set terminating null char in the string */
             MPI_File_close(&myfile); /* Close the file */
-            
-            for (int y = (nrchar*rank-1)/(3*400); y < ((nrchar*rank-1)/(3*400))+(nrchar/(3*400)) ; y++) {
+            //printf("[%d] %d - %d (%d)\n",rank,nrchar,bufsize,filesize);
+            for (int y = (bufsize*rank)/(3*400); y < ((bufsize*rank)/(3*400))+(bufsize/(3*400)) ; y++) {
                   for (int x = 0; x < 400; x++) {
                         buffer[0] = x;
                         buffer[1] = y;   
