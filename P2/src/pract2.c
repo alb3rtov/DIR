@@ -210,9 +210,6 @@ int main (int argc, char *argv[]) {
                   //printf("%d - %d\n",diff, bufsize);
             }*/
 
-          
-            
-
             buf = (unsigned char *) malloc((bufsize+1)*sizeof(unsigned char)); /* Allocate the buffer to read to, one extra for terminating null char */
             //printf("%d (%d)\n",bufsize,filesize);
             MPI_File_set_view(myfile, rank*bufsize*sizeof(unsigned char), MPI_UNSIGNED_CHAR, MPI_UNSIGNED_CHAR, 
