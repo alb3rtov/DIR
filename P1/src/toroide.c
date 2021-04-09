@@ -73,12 +73,10 @@ int main(int argc, char **argv) {
 		final_min_number = search_min_number(neighbours, size, buf);
 		
 		//printf("Process %d number: %.2f\n",rank, final_min_number);
+		if (rank == 0) {
+			printf("\n[Process %d] The mininum number is: %.2f\n\n", rank, final_min_number);
+		}
 	}
-
-	if (rank == 0) {
-		printf("\n[Process %d] The mininum number is: %.2f\n\n", rank, final_min_number);
-	}
-
 	MPI_Finalize();
 	return 0;
 }

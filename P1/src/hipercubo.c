@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 
         } else {
             send_network_topology_confirmation(hypercube, size, request);
-            fprintf(stderr, "Error, can't create toroidal network: %d processes\n", size);
+            fprintf(stderr, "Error, can't create hipercube network: %d processes\n", size);
         }
     } else {
         MPI_Recv(&hypercube, 1, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
@@ -61,13 +61,12 @@ int main(int argc, char **argv) {
         max_number = search_max_number(neighbours, size, dimension, buf, rank);
 
         //printf("Process %d number: %.2f: max: %.2f\n",rank, buf, max_number);
+        if (rank == 0) {
+            printf("\n[Process %d] The maximum number is: %.2f\n\n", rank, max_number);
+        }
     }
-
-    if (rank == 0) {
-        printf("\n[Process %d] The maximum number is: %.2f\n\n", rank, max_number);
-    }
-
     MPI_Finalize();
+    return 0;
 }
 
 /* Function to compare which is the bigger number */
