@@ -8,7 +8,7 @@
 #include "filters_values.h"
 
 #define NIL (0)
-#define NUM_WORKERS_PROCESS 3
+#define NUM_WORKERS_PROCESS 4
 #define FILENAME "data/foto.dat"
 
 /* Global variables */
@@ -201,27 +201,38 @@ int main (int argc, char *argv[]) {
 
             bufsize = check_pixels_division(bufsize);
 
-            /*int diff = 0;
-            if (rank == NUM_WORKERS_PROCESS) {
+            int diff = 0;
+            if (rank == NUM_WORKERS_PROCESS-1) {
                   if (bufsize*NUM_WORKERS_PROCESS != filesize) {
                         diff = filesize - (bufsize*NUM_WORKERS_PROCESS);
-                        bufsize = bufsize + diff;
-                  }
-                  //printf("%d - %d\n",diff, bufsize);
-            }*/
+		  }
+                  //printf("%d - %d\n",diff, diff+bufsize);
+            }
 
-            buf = (unsigned char *) malloc((bufsize+1)*sizeof(unsigned char)); /* Allocate the buffer to read to, one extra for terminating null char */
+            buf = (unsigned char *) malloc((bufsize+diff)*sizeof(unsigned char)); /* Allocate the buffer to read to, one extra for terminating null char */
             //printf("%d (%d)\n",bufsize,filesize);
             MPI_File_set_view(myfile, rank*bufsize*sizeof(unsigned char), MPI_UNSIGNED_CHAR, MPI_UNSIGNED_CHAR, 
                         "native", MPI_INFO_NULL); /* Set the file view */   
-            MPI_File_read(myfile, buf, bufsize, MPI_UNSIGNED_CHAR, &status); /* Read from the file */
+            MPI_File_read(myfile, buf, bufsize+diff, MPI_UNSIGNED_CHAR, &status); /* Read from the file */
             MPI_Get_count(&status, MPI_UNSIGNED_CHAR, &nrchar); /* Find out how many elemyidnts were read */
             
             buf[nrchar] = (unsigned char)0; /* Set terminating null char in the string */
             MPI_File_close(&myfile); /* Close the file */
-            //printf("[%d] %d - %d (%d)\n",rank,nrchar,bufsize,filesize);
-            for (int y = (bufsize*rank)/(3*400); y < ((bufsize*rank)/(3*400))+(bufsize/(3*400)) ; y++) {
+            //printf("[%d] %d - %d (%lld)\n",rank,nrchar,bufsize+diff,filesize);
+            
+	    int begin = (bufsize*rank)/(3*400);
+	    int end =  (((bufsize+diff)*rank)/(3*400))+((bufsize)/(3*400));
+
+	    for (int y = begin; y < end; y++) {
+	    	//if (rank == NUM_WORKERS_PROCESS-1) {
+	    	//	printf("%d\n",400-y);
+	    	//}
                   for (int x = 0; x < 400; x++) {
+                  	 /*if (rank == NUM_WORKERS_PROCESS-1) {
+                  	 	if (y == end-1) {
+                  	 		printf("(%d) %d\n",x,buf[cnt]);
+                  	 	}
+                  	 }*/
                         buffer[0] = x;
                         buffer[1] = y;   
                         select_filter(buffer, buf, cnt, num_filter);
@@ -233,4 +244,3 @@ int main (int argc, char *argv[]) {
 
       MPI_Finalize();
 }
-
