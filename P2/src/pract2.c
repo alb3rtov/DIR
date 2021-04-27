@@ -10,6 +10,8 @@
 #define NIL (0)
 #define NUM_WORKERS_PROCESS 4
 #define FILENAME "data/foto.dat"
+#define HEIGHT 400
+#define WIDTH 400
 
 /* Global variables */
 XColor colorX;
@@ -132,13 +134,13 @@ int check_pixels_division(int bufsize) {
       int truncanted;
       double result;
 
-      result = (double) bufsize/(3*400);
+      result = (double) bufsize/(3*HEIGHT);
       truncanted = (int) result;
       //printf("%d %f\n",truncanted, result);
       while (result != truncanted) {
             
             bufsize--;
-            result = (double) bufsize/(3*400);
+            result = (double) bufsize/(3*HEIGHT);
             truncanted = (int) result;
             //printf("%d\n",bufsize);
       }
@@ -173,7 +175,7 @@ int main (int argc, char *argv[]) {
             
             initX();
             
-            for (int i = 0; i < 160000; i++) {
+            for (int i = 0; i < HEIGHT*WIDTH; i++) {
                   MPI_Recv(&buffer, 5, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, intercomm, &status);
                   dibujaPunto(buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
             }
@@ -220,14 +222,14 @@ int main (int argc, char *argv[]) {
             MPI_File_close(&myfile); /* Close the file */
             //printf("[%d] %d - %d (%lld)\n",rank,nrchar,bufsize+diff,filesize);
             
-	    int begin = (bufsize*rank)/(3*400);
-	    int end =  (((bufsize+diff)*rank)/(3*400))+((bufsize)/(3*400));
+	    int begin = (bufsize*rank)/(3*HEIGHT);
+	    int end =  (((bufsize+diff)*rank)/(3*HEIGHT))+((bufsize)/(3*HEIGHT));
 
 	    for (int y = begin; y < end; y++) {
 	    	//if (rank == NUM_WORKERS_PROCESS-1) {
 	    	//	printf("%d\n",400-y);
 	    	//}
-                  for (int x = 0; x < 400; x++) {
+                  for (int x = 0; x < WIDTH; x++) {
                   	 /*if (rank == NUM_WORKERS_PROCESS-1) {
                   	 	if (y == end-1) {
                   	 		printf("(%d) %d\n",x,buf[cnt]);
