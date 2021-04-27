@@ -8,7 +8,7 @@ https://github.com/alb3rtov/DIR/
 - exec: Executables files
 - include: Constains headers files with definitions
 
-# Compile
+## Compile
 To compile the code use `make`
 
 ## Execute
