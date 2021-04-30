@@ -136,13 +136,11 @@ int check_pixels_division(int bufsize) {
 
       result = (double) bufsize/(3*HEIGHT);
       truncanted = (int) result;
-      //printf("%d %f\n",truncanted, result);
       while (result != truncanted) {
             
             bufsize--;
             result = (double) bufsize/(3*HEIGHT);
             truncanted = (int) result;
-            //printf("%d\n",bufsize);
       }
 
       return bufsize;
@@ -162,8 +160,7 @@ int main (int argc, char *argv[]) {
       MPI_Comm_size(MPI_COMM_WORLD, &size);
       MPI_Comm_get_parent( &commPadre );
 
-      if ((commPadre==MPI_COMM_NULL)
-            && (rank==0) )  {
+      if ((commPadre==MPI_COMM_NULL) && (rank==0) )  {
             
             MPI_Comm_spawn("exec/pract2", MPI_ARGV_NULL, NUM_WORKERS_PROCESS, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &intercomm, errcodes);
 	      
@@ -203,16 +200,15 @@ int main (int argc, char *argv[]) {
 
             bufsize = check_pixels_division(bufsize);
 
+            /* Calculate the pixels rows that have not been assigned to any process */
             int diff = 0;
-            if (rank == NUM_WORKERS_PROCESS-1) {
+            if (rank == NUM_WORKERS_PROCESS-1) { //Assign to the last process
                   if (bufsize*NUM_WORKERS_PROCESS != filesize) {
                         diff = filesize - (bufsize*NUM_WORKERS_PROCESS);
 		  }
-                  //printf("%d - %d\n",diff, diff+bufsize);
             }
 
             buf = (unsigned char *) malloc((bufsize+diff)*sizeof(unsigned char)); /* Allocate the buffer to read to, one extra for terminating null char */
-            //printf("%d (%d)\n",bufsize,filesize);
             MPI_File_set_view(myfile, rank*bufsize*sizeof(unsigned char), MPI_UNSIGNED_CHAR, MPI_UNSIGNED_CHAR, 
                         "native", MPI_INFO_NULL); /* Set the file view */   
             MPI_File_read(myfile, buf, bufsize+diff, MPI_UNSIGNED_CHAR, &status); /* Read from the file */
@@ -222,19 +218,11 @@ int main (int argc, char *argv[]) {
             MPI_File_close(&myfile); /* Close the file */
             //printf("[%d] %d - %d (%lld)\n",rank,nrchar,bufsize+diff,filesize);
             
-	    int begin = (bufsize*rank)/(3*HEIGHT);
-	    int end =  (((bufsize+diff)*rank)/(3*HEIGHT))+((bufsize)/(3*HEIGHT));
+            int begin = (bufsize*rank)/(3*HEIGHT);
+	      int end =  (((bufsize+diff)*rank)/(3*HEIGHT))+((bufsize)/(3*HEIGHT));
 
-	    for (int y = begin; y < end; y++) {
-	    	//if (rank == NUM_WORKERS_PROCESS-1) {
-	    	//	printf("%d\n",400-y);
-	    	//}
+            for (int y = begin; y < end; y++) {
                   for (int x = 0; x < WIDTH; x++) {
-                  	 /*if (rank == NUM_WORKERS_PROCESS-1) {
-                  	 	if (y == end-1) {
-                  	 		printf("(%d) %d\n",x,buf[cnt]);
-                  	 	}
-                  	 }*/
                         buffer[0] = x;
                         buffer[1] = y;   
                         select_filter(buffer, buf, cnt, num_filter);
