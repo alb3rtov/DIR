@@ -1,10 +1,10 @@
-## Práctica 1 DIR
+## Prática 2 DIR
 ## Proyect url
 https://github.com/alb3rtov/DIR/
 
 ## Directories and files
 - src: Contains the source C code
-- datos.dat: Contais the list of the numbers
+- foto.dat: Contais the RGB pixels of the image
 - exec: Executables files
 - include: Constains headers files with definitions
 
@@ -12,8 +12,7 @@ https://github.com/alb3rtov/DIR/
 To compile the code use `make`
 
 ## Execute
-To run toroidal network: `make run_toroide`
-To run hypercube network: `make run_hipercubo`
+To run the program type: `make run_pract2`
 
 ## Clean executables
 To clean the directories use: `make clean`
